@@ -76,11 +76,8 @@ export async function GET(request: NextRequest) {
         ${sql.split('ORDER BY')[0]}
       ) as count_query
     `;
-    const countResult = await queryOne<{ total: number }>(
-      countSql,
-      params.slice(0, -2)
-    );
-    const total = countResult?.total || 0;
+    const countResult = await queryOne(countSql, params.slice(0, -2));
+    const total = (countResult as any)?.total || 0;
 
     return NextResponse.json({
       events,

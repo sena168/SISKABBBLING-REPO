@@ -62,7 +62,8 @@ export default function LoginPage() {
       await signInWithGoogle();
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user') {
-        setError('Failed to log in with Google.');
+        setError(`Login failed: ${err.message || err.code || 'Unknown error'}`);
+        console.error('Login error detailed:', err);
       }
     }
   };

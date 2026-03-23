@@ -2,47 +2,48 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
 import { query } from '@/lib/db';
-import { HealthLog } from '@/lib/types';
 
 // GET /api/health
 // Returns latest health status of services (all roles allowed)
 export async function GET(request: NextRequest) {
   try {
-    // Step 1: Authenticate user (optional - allow unauthenticated for basic health check?)
-    // According to spec: all roles allowed, but still should be authenticated
+    // Step 1: Authenticate user
     const authHeader = request.headers.get('Authorization');
     const user = await getAuthUser(authHeader);
 
-    // If no auth, we could either return 401 or allow it. Let's require auth for consistency.
+    // If no auth, return 401
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Step 2: Query latest health logs
+    // Step 2: Query latest health log row
     const sql = `
-      SELECT service, status, ts
+      SELECT service, status, latency_ms, note, checked_at
       FROM health_log
-      ORDER BY ts DESC
-      LIMIT 10
+      ORDER BY checked_at DESC
+      LIMIT 1
     `;
 
-    const healthLogs = (await query(sql, [])) as HealthLog[];
+    const healthLogs = await query(sql, []);
 
-    // Optionally, group by service to get latest status per service
-    const latestByService: Record<string, HealthLog> = {};
-    for (const log of healthLogs) {
-      const service = log.service;
-      if (
-        !latestByService[service] ||
-        new Date(log.ts) > new Date(latestByService[service].ts)
-      ) {
-        latestByService[service] = log;
-      }
+    // Handle case where no rows exist
+    if (healthLogs.length === 0) {
+      return NextResponse.json({
+        status: 'ok' as const,
+        lastChecked: null,
+        message: 'System operational',
+      });
     }
 
+    const latestLog = healthLogs[0];
+    const status = latestLog.status as 'ok' | 'down';
+
     return NextResponse.json({
-      health: Object.values(latestByService),
-      fetched_at: new Date().toISOString(),
+      status,
+      lastChecked: latestLog.checked_at,
+      message: status === 'ok'
+        ? 'System operational'
+        : 'WAHA offline — patrol logging may be affected',
     });
   } catch (error) {
     console.error('Health GET error:', error);

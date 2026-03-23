@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "kill-port 3000 & next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "firebase": "^10.14.1",
     "firebase-admin": "^12.5.0",
-    "@neondatabase/serverless": "^0.10.4",
     "next": "14.2.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -21,6 +21,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",
+    "kill-port": "^2.0.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3"

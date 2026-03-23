@@ -16,15 +16,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Step 2: Query latest health log row
+    // Step 2: Query latest health log row for WAHA
     const sql = `
       SELECT service, status, latency_ms, note, checked_at
       FROM health_log
+      WHERE service = 'waha'
       ORDER BY checked_at DESC
       LIMIT 1
     `;
 
-    const healthLogs = await query(sql, []);
+    const healthLogs = (await query(sql, [])) as {
+      service: string;
+      status: string;
+      latency_ms: number;
+      note: string;
+      checked_at: Date;
+    }[];
 
     // Handle case where no rows exist
     if (healthLogs.length === 0) {
@@ -41,9 +48,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       status,
       lastChecked: latestLog.checked_at,
-      message: status === 'ok'
-        ? 'System operational'
-        : 'WAHA offline — patrol logging may be affected',
+      message:
+        status === 'ok'
+          ? 'System operational'
+          : 'WAHA offline — patrol logging may be affected',
     });
   } catch (error) {
     console.error('Health GET error:', error);
